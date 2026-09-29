@@ -1,0 +1,18 @@
+{
+  "name": "novel-rhythm-studio",
+  "version": "1.0.0",
+  "description": "Webnovel rhythm studio: guided question-driven co-design flow (curve-first or chapter-first, converging on a rough outline), full-book tension curves, 13 chapter templates, intra-chapter beats, and an offline viewer.",
+  "author": {
+    "name": "wuw10753-cpu"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/wuw10753-cpu/novel-rhythm-studio",
+  "keywords": [
+    "webnovel",
+    "writing",
+    "outline",
+    "rhythm",
+    "tension-curve",
+    "chapter-template"
+  ]
+}

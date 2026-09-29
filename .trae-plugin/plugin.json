@@ -1,0 +1,49 @@
+{
+  "name": "novel-rhythm-studio",
+  "version": "1.0.0",
+  "description": "Webnovel rhythm studio: a guided, question-driven co-design flow (curve-first or chapter-first, converging on a rough outline), plus full-book tension curves, 13 reusable chapter templates, intra-chapter beat chains, and an offline viewer.",
+  "i18n": {
+    "display_name": {
+      "en": "Novel Rhythm Studio",
+      "zh-cn": "节奏工坊"
+    },
+    "description": {
+      "en": "Co-design your webnovel with the agent through guided questions (curve-first or chapter-first, converging on a rough outline), then plan tension curves, expand chapters into beats, and visualize both with a built-in offline viewer.",
+      "zh-cn": "与 AI 以提问方式共创：先定节奏曲线或先落地章节，收敛为粗纲；配全书节奏曲线、13 种章节模板与离线可视化查看器。"
+    }
+  },
+  "author": {
+    "name": "wuw10753-cpu"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/wuw10753-cpu/novel-rhythm-studio",
+  "keywords": [
+    "webnovel",
+    "writing",
+    "outline",
+    "rhythm",
+    "tension-curve",
+    "chapter-template",
+    "creative-writing",
+    "novel"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "节奏工坊",
+    "shortDescription": "提问式网文设计：节奏曲线 · 章内节拍 · 粗纲",
+    "longDescription": "两种用法：① 看样板——20 章示范节奏随时浏览；② 辅助设计——AI 先问路（先定节奏曲线 / 先落地章节），再向作者提问共创，两条路收敛为「粗纲」，成型后可作者自写或 AI 续设计。底层把长篇节奏拆成三层：全书层（章节节点+张力曲线）、章节层（13 种可复用章节模板）、节拍层（章内拍点链+章内曲线），配单文件离线查看器（示例、导入 JSON、节点下钻、导出 SVG）。全部人物、场所、体系、事件均已通用化，可套用任意题材。",
+    "developerName": "wuw10753-cpu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "用节奏工坊设计我的新书（先问我想先定曲线还是先排章节）",
+      "用节奏工坊给我的新书排前 20 章的节奏曲线",
+      "按 T11 模板为第 14 章设计章内节拍卡",
+      "检查我这份章纲的张力曲线和喘息章位置"
+    ],
+    "brandColor": "#7C5CFF"
+  }
+}

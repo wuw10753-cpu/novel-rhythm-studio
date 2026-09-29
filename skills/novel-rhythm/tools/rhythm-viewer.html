@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>节奏工坊 · 节奏曲线查看器</title>
+<style>
+  :root{
+    --brand:#7C5CFF;
+    --ink:#2B3244;
+    --ink-2:#5D6577;
+    --ink-3:#8B93A5;
+    --line:#E7EAF0;
+    --bg:#F5F6FA;
+    --card:#FFFFFF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+    font-size:14px;line-height:1.6;
+  }
+  /* ---------- header ---------- */
+  .hero{background:var(--card);border-bottom:1px solid var(--line)}
+  .hero-inner{max-width:1280px;margin:0 auto;padding:18px 24px 12px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--brand);white-space:nowrap}
+  .brand-mark{font-size:18px}
+  .brand-sub{font-size:11px;font-weight:400;color:var(--ink-3);letter-spacing:.06em}
+  .hero-text{flex:1;min-width:220px}
+  .hero-text h1{margin:0;font-size:20px;line-height:1.3}
+  .hero-text .subtitle{margin:2px 0 0;font-size:12.5px;color:var(--ink-2)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    border:1px solid #D9DEE8;background:#fff;color:var(--ink);
+    border-radius:9px;padding:8px 15px;font-size:13px;cursor:pointer;
+    font-family:inherit;transition:all .12s;
+  }
+  .btn:hover{background:#F2F3F8}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:hover{background:#6a4cf0}
+  .legend{max-width:1280px;margin:0 auto;padding:0 24px 12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+  .legend .chip{display:inline-flex;align-items:center;gap:6px}
+  .legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  /* ---------- layout ---------- */
+  main{max-width:1280px;margin:0 auto;padding:18px 24px 8px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(20,30,60,.06);padding:18px 20px;margin-bottom:18px}
+  .card-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .card-head h2{margin:0;font-size:15.5px}
+  .hint{margin:0;font-size:12px;color:var(--ink-3)}
+  /* ---------- chart ---------- */
+  .chart-scroll{overflow-x:auto;padding-bottom:6px}
+  .chart-wrap{position:relative;display:inline-block;min-width:100%}
+  .tooltip{
+    position:absolute;z-index:20;pointer-events:none;
+    background:rgba(30,34,48,.95);color:#fff;border-radius:9px;
+    padding:10px 12px;font-size:12px;line-height:1.55;max-width:320px;
+    opacity:0;transform:translateY(3px);transition:opacity .12s,transform .12s;
+    box-shadow:0 6px 20px rgba(20,24,40,.28);
+  }
+  .tooltip.show{opacity:1;transform:translateY(0)}
+  .tooltip .tt-head{font-weight:700;font-size:12.5px;margin-bottom:3px}
+  .tooltip .tt-meta{color:#C9CEE0;margin-bottom:4px}
+  .tooltip .tt-line{color:#E4E7F2}
+  .tooltip .tt-hook{color:#FFD9A0}
+  .tooltip .tt-tip{margin-top:6px;color:#9BA3C0;font-size:11px}
+  .empty{padding:46px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+  .empty b{color:var(--ink-2)}
+  /* ---------- detail ---------- */
+  .detail-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+  .detail-title{font-size:16px;font-weight:700}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{background:#F1F3F8;border-radius:999px;padding:3px 11px;font-size:12px;color:var(--ink-2)}
+  .badge.tpl{background:rgba(124,92,255,.12);color:#6a4cf0;font-weight:700}
+  .badge.tension{color:#fff}
+  .detail-lines{margin:10px 0 2px;font-size:13px;color:var(--ink-2)}
+  .detail-lines p{margin:3px 0}
+  .detail-lines b{color:var(--ink)}
+  .beats-title{margin:16px 0 6px;font-size:13.5px;font-weight:700}
+  .beat-svg-host{overflow-x:auto}
+  .beat-list{margin-top:10px;border-top:1px solid var(--line)}
+  .beat-row{
+    display:grid;grid-template-columns:26px 70px 90px 30px 1fr;
+    align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid #F3F4F8;font-size:13px;
+  }
+  .beat-idx{color:var(--ink-3);font-size:12px;text-align:center}
+  .beat-name{font-weight:600}
+  .beat-bar{background:#EEF0F5;border-radius:99px;height:7px;overflow:hidden}
+  .beat-bar i{display:block;height:100%;border-radius:99px}
+  .beat-t{font-weight:700;text-align:center;font-size:12.5px}
+  .beat-desc{color:var(--ink-2)}
+  .beats-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--ink-3);font-size:12.5px;background:#FAFBFD}
+  /* ---------- modal / toast / drop ---------- */
+  .modal{position:fixed;inset:0;background:rgba(20,24,40,.45);display:none;align-items:center;justify-content:center;z-index:60}
+  .modal.show{display:flex}
+  .modal-box{background:#fff;border-radius:12px;padding:18px 20px;width:min(700px,92vw);box-shadow:0 18px 50px rgba(20,24,40,.3)}
+  .modal-box h3{margin:0 0 10px;font-size:15px}
+  .modal-box textarea{
+    width:100%;height:300px;border:1px solid var(--line);border-radius:9px;padding:12px;
+    font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.5;resize:vertical;color:var(--ink);
+  }
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translate(-50%,14px);
+    background:rgba(30,34,48,.95);color:#fff;border-radius:999px;padding:9px 20px;
+    font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:80;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.error{background:#C0392B}
+  #dropHint{
+    position:fixed;left:50%;top:20px;transform:translate(-50%,-8px);
+    background:var(--brand);color:#fff;border-radius:999px;padding:9px 22px;font-size:13px;
+    opacity:0;pointer-events:none;transition:all .16s;z-index:70;
+  }
+  body.dragging #dropHint{opacity:1;transform:translate(-50%,0)}
+  /* ---------- footer ---------- */
+  footer{max-width:1280px;margin:0 auto;padding:4px 24px 40px;font-size:12px;color:var(--ink-3)}
+  footer code{background:#ECEFF5;border-radius:5px;padding:1px 6px;font-size:11.5px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand"><span class="brand-mark">◈</span>节奏工坊<span class="brand-sub">Novel Rhythm Studio</span></div>
+    <div class="hero-text">
+      <h1 id="projectTitle">未命名项目</h1>
+      <p class="subtitle" id="projectSubtitle">全书张力曲线与章节节点 · 点击节点下钻章内节拍</p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btnImport">导入 JSON</button>
+      <button class="btn" id="btnPaste">粘贴数据</button>
+      <button class="btn" id="btnExport">导出 SVG</button>
+    </div>
+  </div>
+  <div class="legend" id="legend"></div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="card-head">
+      <h2>全书节奏曲线</h2>
+      <p class="hint">张力 1~5 · 曲线 = 章节节点串联 · 彩色节点 = 章张力 · 背景色带 = 分段（浪）</p>
+    </div>
+    <div class="chart-scroll">
+      <div class="chart-wrap" id="chartWrap">
+        <div id="chartSvgHost"></div>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="detailCard">
+    <div id="detailBody"></div>
+  </section>
+</main>
+
+<footer>
+  数据格式见 <code>skills/novel-rhythm/references/outline-schema.md</code> ·
+  演示数据 <code>tools/demo-rhythm-data.js</code> ·
+  章内节拍规则见 <code>skills/novel-rhythm/references/chapter-templates.md</code>
+</footer>
+
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+<div id="dropHint">松开鼠标：载入 JSON 节奏档案</div>
+
+<div class="modal" id="pasteModal">
+  <div class="modal-box">
+    <h3>粘贴节奏数据（JSON）</h3>
+    <textarea id="pasteArea" spellcheck="false" placeholder='{ "meta": { "title": "我的新书" }, "chapters": [ ... ] }'></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="btnPasteCancel">关闭</button>
+      <button class="btn primary" id="btnPasteLoad">载入</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="demo-rhythm-data.js" onerror="window.__demoMissing = true"></script>
+<script>
+(function(){
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  var T_COLORS = ["#5B8DEF", "#45B07E", "#E0B335", "#E07B39", "#D64550"];
+  var DEFAULT_SCALE = ["1=舒缓/情感", "2=日常", "3=小起伏", "4=高潮/爽点", "5=强钩子"];
+  var TAG_MAP = {
+    "钩子章":"钩","设定章":"设","登场章":"喜","机制章":"机","信息章":"息","伏笔章":"伏",
+    "转折章":"转","铺垫章":"铺","爽点章":"爽","高潮章":"潮","收获章":"收","喘息章":"息",
+    "铺设章":"铺","蓄力章":"蓄","落地章":"惊"
+  };
+  var FONT = "'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif";
+
+  var DATA = { meta:{}, segments:[], chapters:[] };
+  var selected = 0;
+
+  var host = document.getElementById("chartSvgHost");
+  var wrap = document.getElementById("chartWrap");
+  var tooltip = document.getElementById("tooltip");
+  var detailBody = document.getElementById("detailBody");
+  var detailCard = document.getElementById("detailCard");
+  var legendEl = document.getElementById("legend");
+  var titleEl = document.getElementById("projectTitle");
+  var subtitleEl = document.getElementById("projectSubtitle");
+  var toastEl = document.getElementById("toast");
+  var fileInput = document.getElementById("fileInput");
+  var pasteModal = document.getElementById("pasteModal");
+  var pasteArea = document.getElementById("pasteArea");
+  var toastTimer = null;
+
+  /* ---------------- helpers ---------------- */
+  function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+  function num(v, d){ var n = Number(v); return isFinite(n) ? n : d; }
+  function esc(s){
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function colorFor(t){ return T_COLORS[clamp(Math.round(t), 1, 5) - 1]; }
+  function fmtT(t){ var n = num(t, 3); return (Math.round(n) === n) ? String(n) : n.toFixed(1); }
+  function tagOf(c){
+    if(c.tag) return c.tag;
+    if(TAG_MAP[c.type]) return TAG_MAP[c.type];
+    var m = String(c.type || "").replace(/章$/, "");
+    return m ? m.charAt(0) : "";
+  }
+  function dirOf(chs, i){
+    var c = chs[i];
+    if(c.dir) return c.dir;
+    if(c.tension >= 4) return "★";
+    if(c.tension >= 3) return "▲";
+    return "▼";
+  }
+  function toast(msg, isError){
+    toastEl.textContent = msg;
+    toastEl.classList.toggle("error", !!isError);
+    toastEl.classList.add("show");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------------- data normalization ---------------- */
+  function normalize(raw){
+    if(!raw || typeof raw !== "object") throw new Error("数据为空或不是对象");
+    if(!Array.isArray(raw.chapters) || raw.chapters.length === 0) throw new Error("缺少 chapters 数组（至少 1 章）");
+    var chapters = raw.chapters.slice().sort(function(a, b){
+      return num(a.no, 0) - num(b.no, 0);
+    }).map(function(c, i){
+      var no = num(c.no, i + 1);
+      return {
+        no: no,
+        label: c.label || ("第 " + no + " 章"),
+        template: c.template || "",
+        type: c.type || "",
+        tag: c.tag || "",
+        dir: c.dir || null,
+        tension: clamp(num(c.tension, 3), 1, 5),
+        tensionEnd: (c.tensionEnd === null || c.tensionEnd === undefined) ? null : clamp(num(c.tensionEnd, 1), 1, 5),
+        mood: c.mood || "",
+        summary: c.summary || "",
+        hook: c.hook || "",
+        beats: Array.isArray(c.beats) ? c.beats.filter(function(b){ return b && b.name; }).map(function(b){
+          return { name: b.name, tension: clamp(num(b.tension, 3), 1, 5), desc: b.desc || "" };
+        }) : []
+      };
+    });
+    return {
+      meta: (raw.meta && typeof raw.meta === "object") ? raw.meta : {},
+      segments: Array.isArray(raw.segments) ? raw.segments.filter(function(s){ return s && s.name; }) : [],
+      chapters: chapters
+    };
+  }
+
+  /* ---------------- header & legend ---------------- */
+  function renderHeader(){
+    titleEl.textContent = DATA.meta.title || "未命名项目";
+    subtitleEl.textContent = DATA.meta.subtitle || "全书张力曲线与章节节点 · 点击节点下钻章内节拍";
+    var scale = (Array.isArray(DATA.meta.scale) && DATA.meta.scale.length) ? DATA.meta.scale : DEFAULT_SCALE;
+    var html = "";
+    scale.forEach(function(item, i){
+      var text = String(item);
+      var parts = text.split("=");
+      var label = parts.length > 1 ? parts[1] : text;
+      html += '<span class="chip"><span class="dot" style="background:' + T_COLORS[i % 5] + '"></span>' + esc(label) + "</span>";
+    });
+    legendEl.innerHTML = html;
+  }
+
+  /* ---------------- main chart ---------------- */
+  function renderChart(){
+    var chs = DATA.chapters;
+    var n = chs.length;
+    if(n === 0){ renderEmpty(); return; }
+
+    var PAD = { top: 76, right: 48, bottom: 96, left: 60 };
+    var plotH = 300;
+    var plotBottom = PAD.top + plotH;
+    var idealStep = 74;
+    var width = Math.max(900, PAD.left + PAD.right + Math.max(n - 1, 1) * idealStep);
+    var step = n > 1 ? (width - PAD.left - PAD.right) / (n - 1) : 0;
+    var height = plotBottom + PAD.bottom;
+
+    function x(i){ return n > 1 ? PAD.left + i * step : PAD.left + (width - PAD.left - PAD.right) / 2; }
+    function y(t){ return PAD.top + plotH * (1 - (clamp(t, 1, 5) - 1) / 4); }
+
+    var s = '<svg xmlns="' + NS + '" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" font-family="' + FONT + '" role="img" aria-label="全书节奏曲线">';
+    s += '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">' +
+         '<stop offset="0" stop-color="#7C5CFF" stop-opacity="0.16"/>' +
+         '<stop offset="1" stop-color="#7C5CFF" stop-opacity="0.02"/></linearGradient></defs>';
+
+    /* segment bands */
+    var bandFills = ["rgba(124,92,255,0.055)", "rgba(91,141,239,0.055)", "rgba(224,123,57,0.065)", "rgba(69,176,126,0.065)"];
+    DATA.segments.forEach(function(seg, si){
+      var a = -1, b = -1;
+      for(var i = 0; i < n; i++){
+        if(a < 0 && chs[i].no >= seg.from) a = i;
+        if(chs[i].no <= seg.to) b = i;
+      }
+      if(a < 0) a = 0;
+      if(b < a) b = a;
+      var x1 = x(a) - step * 0.45;
+      var x2 = x(b) + step * 0.45;
+      s += '<rect x="' + x1 + '" y="' + (PAD.top - 34) + '" width="' + (x2 - x1) + '" height="' + (plotBottom - PAD.top + 34) + '" fill="' + bandFills[si % 4] + '"/>';
+      s += '<line x1="' + x1 + '" y1="' + (PAD.top - 34) + '" x2="' + x1 + '" y2="' + plotBottom + '" stroke="#E7EAF0" stroke-width="1"/>';
+      s += '<text x="' + (x1 + 10) + '" y="' + (PAD.top - 40) + '" font-size="11.5" fill="#8B93A5" letter-spacing="1">' + esc(seg.name) + "</text>";
+    });
+
+    /* grid lines */
+    for(var t = 1; t <= 5; t++){
+      var gy = y(t);
+      s += '<line x1="' + (PAD.left - 10) + '" y1="' + gy + '" x2="' + (width - PAD.right + 10) + '" y2="' + gy + '" stroke="#E7EAF0" stroke-width="1"' + (t === 1 ? "" : ' stroke-dasharray="3 5"') + "/>";
+      s += '<text x="' + (PAD.left - 18) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="#9AA3B2">' + t + "</text>";
+    }
+
+    /* area + line */
+    var pts = chs.map(function(c, i){ return [x(i), y(c.tension)]; });
+    var areaPath = "M" + pts[0][0] + " " + plotBottom;
+    pts.forEach(function(p){ areaPath += " L" + p[0] + " " + p[1]; });
+    areaPath += " L" + pts[n - 1][0] + " " + plotBottom + " Z";
+    s += '<path d="' + areaPath + '" fill="url(#areaGrad)"/>';
+    var linePath = pts.map(function(p, i){ return (i ? "L" : "M") + p[0] + " " + p[1]; }).join(" ");
+    s += '<path d="' + linePath + '" fill="none" stroke="#4A5163" stroke-width="2" stroke-linejoin="round"/>';
+
+    /* high-open low-close markers */
+    chs.forEach(function(c, i){
+      if(c.tensionEnd != null && c.tensionEnd !== c.tension){
+        var px = x(i), py1 = y(c.tension), py2 = y(c.tensionEnd);
+        s += '<line x1="' + px + '" y1="' + py1 + '" x2="' + px + '" y2="' + (py2 - 2) + '" stroke="#C2C9D8" stroke-width="1.5" stroke-dasharray="4 4"/>';
+        s += '<path d="M' + (px - 4.5) + " " + (py2 - 8) + " L" + (px + 4.5) + " " + (py2 - 8) + " L" + px + " " + (py2 - 1) + ' Z" fill="#C2C9D8"/>';
+      }
+    });
+
+    /* nodes + labels */
+    chs.forEach(function(c, i){
+      var cx = x(i), cy = y(c.tension);
+      var col = colorFor(c.tension);
+      var sel = (i === selected);
+      if(sel){
+        s += '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="none" stroke="' + col + '" stroke-opacity="0.3" stroke-width="6"/>';
+      }
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (sel ? 8 : 6.5) + '" fill="' + col + '" stroke="#FFFFFF" stroke-width="2"/>';
+      s += '<text x="' + cx + '" y="' + (cy - 16) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + col + '">' + fmtT(c.tension) + "</text>";
+      s += '<text x="' + cx + '" y="' + (cy + 23) + '" text-anchor="middle" font-size="11" fill="' + col + '">' + esc(dirOf(chs, i) + tagOf(c)) + "</text>";
+      s += '<text x="' + cx + '" y="' + (plotBottom + 48) + '" text-anchor="middle" font-size="11" fill="#7A8296">' + c.no + "</text>";
+      if(c.template){
+        s += '<text x="' + cx + '" y="' + (plotBottom + 64) + '" text-anchor="middle" font-size="10" fill="#A8B0BF">' + esc(c.template) + "</text>";
+      }
+    });
+
+    /* hover / click columns */
+    chs.forEach(function(c, i){
+      var x1 = x(i) - step * 0.5;
+      var w = step > 0 ? step : (width - PAD.left - PAD.right);
+      s += '<rect x="' + x1 + '" y="' + (PAD.top - 34) + '" width="' + w + '" height="' + (plotBottom - PAD.top + 34) + '" fill="rgba(0,0,0,0)" data-idx="' + i + '" style="cursor:pointer"/>';
+    });
+
+    s += "</svg>";
+    host.innerHTML = s;
+  }
+
+  function renderEmpty(){
+    host.innerHTML = '<div class="empty">' +
+      "<p><b>暂无节奏数据</b></p>" +
+      "<p>内置示例未找到（应与查看器同目录：<code>demo-rhythm-data.js</code>），也可以自行导入：</p>" +
+      "<p>拖拽 <b>rhythm-data.json</b> 到本页 · 或点右上角「导入 JSON」 · 或点「粘贴数据」</p>" +
+      "<p>数据格式见 <code>skills/novel-rhythm/references/outline-schema.md</code></p>" +
+      "</div>";
+    detailBody.innerHTML = '<div class="empty">导入数据后，点击曲线上的章节节点即可查看该章的模板、尾钩与章内节拍曲线。</div>';
+  }
+
+  /* ---------------- tooltip ---------------- */
+  function showTooltip(idx, e){
+    var c = DATA.chapters[idx];
+    if(!c) return;
+    var html = '<div class="tt-head">第 ' + c.no + " 章 · " + esc(c.label) + "</div>";
+    html += '<div class="tt-meta">' + (c.template ? "模板 " + esc(c.template) + " · " : "") +
+            esc(c.type || "未定章型") + " · 张力 " + fmtT(c.tension) +
+            (c.tensionEnd != null ? "→" + fmtT(c.tensionEnd) : "") + "</div>";
+    if(c.mood) html += '<div class="tt-line">基调：' + esc(c.mood) + "</div>";
+    if(c.summary) html += '<div class="tt-line">' + esc(c.summary) + "</div>";
+    if(c.hook) html += '<div class="tt-line tt-hook">尾钩：' + esc(c.hook) + "</div>";
+    html += '<div class="tt-tip">点击查看章内节拍 · 共 ' + c.beats.length + " 拍</div>";
+    tooltip.innerHTML = html;
+    tooltip.classList.add("show");
+    var wr = wrap.getBoundingClientRect();
+    var tx = e.clientX - wr.left + 16;
+    var ty = e.clientY - wr.top + 14;
+    tooltip.style.left = tx + "px";
+    tooltip.style.top = ty + "px";
+    var tr = tooltip.getBoundingClientRect();
+    if(tr.right > window.innerWidth - 10) tooltip.style.left = Math.max(4, tx - tr.width - 30) + "px";
+    if(tr.bottom > window.innerHeight - 10) tooltip.style.top = Math.max(4, ty - tr.height - 26) + "px";
+  }
+  function hideTooltip(){ tooltip.classList.remove("show"); }
+
+  host.addEventListener("mousemove", function(e){
+    var el = e.target.closest ? e.target.closest("[data-idx]") : null;
+    if(!el){ hideTooltip(); return; }
+    showTooltip(parseInt(el.getAttribute("data-idx"), 10), e);
+  });
+  host.addEventListener("mouseleave", hideTooltip);
+  host.addEventListener("click", function(e){
+    var el = e.target.closest ? e.target.closest("[data-idx]") : null;
+    if(!el) return;
+    selectChapter(parseInt(el.getAttribute("data-idx"), 10));
+  });
+
+  /* ---------------- detail panel ---------------- */
+  function selectChapter(idx){
+    if(idx < 0 || idx >= DATA.chapters.length) return;
+    selected = idx;
+    renderChart();
+    renderDetail();
+  }
+
+  function renderDetail(){
+    var c = DATA.chapters[selected];
+    if(!c){ return; }
+    var tensionText = fmtT(c.tension) + (c.tensionEnd != null && c.tensionEnd !== c.tension ? "→" + fmtT(c.tensionEnd) : "");
+    var html = '<div class="detail-head">' +
+      '<div class="detail-title">第 ' + c.no + " 章 · " + esc(c.label) + "</div>" +
+      '<div class="badges">' +
+      (c.template ? '<span class="badge tpl">模板 ' + esc(c.template) + "</span>" : "") +
+      (c.type ? '<span class="badge">' + esc(c.type) + "</span>" : "") +
+      '<span class="badge tension" style="background:' + colorFor(c.tension) + '">张力 ' + esc(tensionText) + "</span>" +
+      (c.mood ? '<span class="badge">' + esc(c.mood) + "</span>" : "") +
+      "</div></div>";
+    html += '<div class="detail-lines">';
+    if(c.summary) html += "<p><b>一句话功能：</b>" + esc(c.summary) + "</p>";
+    if(c.hook) html += "<p><b>章末钩：</b>" + esc(c.hook) + "</p>";
+    html += "</div>";
+
+    html += '<div class="beats-title">章内节拍曲线（张力 1~5）</div>';
+    if(c.beats.length){
+      html += '<div class="beat-svg-host">' + buildBeatSvg(c.beats) + "</div>";
+      html += '<div class="beat-list">';
+      c.beats.forEach(function(b, i){
+        html += '<div class="beat-row">' +
+          '<span class="beat-idx">' + (i + 1) + "</span>" +
+          '<span class="beat-name">' + esc(b.name) + "</span>" +
+          '<span class="beat-bar"><i style="width:' + (b.tension * 20) + "%;background:" + colorFor(b.tension) + '"></i></span>' +
+          '<span class="beat-t" style="color:' + colorFor(b.tension) + '">' + fmtT(b.tension) + "</span>" +
+          '<span class="beat-desc">' + esc(b.desc) + "</span>" +
+          "</div>";
+      });
+      html += "</div>";
+    } else {
+      html += '<div class="beats-empty">该章尚未展开章内节拍——补齐 beats 数据后即可看到章内曲线（拍点链模板见 references/chapter-templates.md）。</div>';
+    }
+    detailBody.innerHTML = html;
+  }
+
+  function buildBeatSvg(beats){
+    var k = beats.length;
+    var W = 780, H = 172, L = 56, R = 30, TOP = 34, BOT = 46;
+    var plotW = W - L - R;
+    var plotBottom = H - BOT;
+    var plotH = plotBottom - TOP;
+
+    function bx(i){ return k > 1 ? L + i * (plotW / (k - 1)) : L + plotW / 2; }
+    function by(t){ return TOP + plotH * (1 - (clamp(t, 1, 5) - 1) / 4); }
+
+    var s = '<svg xmlns="' + NS + '" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" font-family="' + FONT + '">';
+    for(var t = 1; t <= 5; t++){
+      var gy = by(t);
+      s += '<line x1="' + (L - 10) + '" y1="' + gy + '" x2="' + (W - R + 10) + '" y2="' + gy + '" stroke="#EFF1F6" stroke-width="1"' + (t === 1 ? "" : ' stroke-dasharray="3 5"') + "/>";
+      s += '<text x="' + (L - 18) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10.5" fill="#B0B7C6">' + t + "</text>";
+    }
+    var pts = beats.map(function(b, i){ return [bx(i), by(b.tension)]; });
+    if(k > 1){
+      var area = "M" + pts[0][0] + " " + plotBottom;
+      pts.forEach(function(p){ area += " L" + p[0] + " " + p[1]; });
+      area += " L" + pts[k - 1][0] + " " + plotBottom + " Z";
+      s += '<path d="' + area + '" fill="url(#beatGrad)"/>';
+    }
+    s += '<defs><linearGradient id="beatGrad" x1="0" y1="0" x2="0" y2="1">' +
+         '<stop offset="0" stop-color="#7C5CFF" stop-opacity="0.12"/>' +
+         '<stop offset="1" stop-color="#7C5CFF" stop-opacity="0.02"/></linearGradient></defs>';
+    var line = pts.map(function(p, i){ return (i ? "L" : "M") + p[0] + " " + p[1]; }).join(" ");
+    s += '<path d="' + line + '" fill="none" stroke="#4A5163" stroke-width="1.8" stroke-linejoin="round"/>';
+
+    beats.forEach(function(b, i){
+      var cx = pts[i][0], cy = pts[i][1];
+      var col = colorFor(b.tension);
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="5.5" fill="' + col + '" stroke="#fff" stroke-width="1.6"/>';
+      s += '<text x="' + cx + '" y="' + (cy - 12) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="' + col + '">' + fmtT(b.tension) + "</text>";
+      s += '<text x="' + cx + '" y="' + (plotBottom + 22) + '" text-anchor="middle" font-size="10.5" fill="#7A8296">' + esc(b.name) + "</text>";
+    });
+    s += "</svg>";
+    return s;
+  }
+
+  /* ---------------- data loading ---------------- */
+  function loadRaw(raw, sourceName){
+    var data = normalize(raw);
+    DATA = data;
+    selected = 0;
+    renderHeader();
+    renderChart();
+    renderDetail();
+    toast("已载入：" + (sourceName || "数据") + "（" + DATA.chapters.length + " 章）");
+  }
+  function loadJsonText(text, sourceName){
+    var raw;
+    try { raw = JSON.parse(text); }
+    catch(err){ toast("JSON 解析失败：" + err.message, true); return; }
+    try { loadRaw(raw, sourceName); }
+    catch(err){ toast("载入失败：" + err.message, true); }
+  }
+  function readFile(file){
+    var reader = new FileReader();
+    reader.onload = function(){ loadJsonText(String(reader.result), file.name); };
+    reader.onerror = function(){ toast("文件读取失败", true); };
+    reader.readAsText(file, "utf-8");
+  }
+
+  document.getElementById("btnImport").addEventListener("click", function(){ fileInput.click(); });
+  fileInput.addEventListener("change", function(){
+    var f = fileInput.files && fileInput.files[0];
+    if(f) readFile(f);
+    fileInput.value = "";
+  });
+
+  document.getElementById("btnPaste").addEventListener("click", function(){
+    pasteModal.classList.add("show");
+    pasteArea.focus();
+  });
+  document.getElementById("btnPasteCancel").addEventListener("click", function(){ pasteModal.classList.remove("show"); });
+  document.getElementById("btnPasteLoad").addEventListener("click", function(){
+    var text = pasteArea.value.trim();
+    if(!text){ toast("粘贴内容为空", true); return; }
+    loadJsonText(text, "粘贴数据");
+    pasteModal.classList.remove("show");
+  });
+  pasteModal.addEventListener("click", function(e){ if(e.target === pasteModal) pasteModal.classList.remove("show"); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape") pasteModal.classList.remove("show"); });
+
+  document.addEventListener("dragover", function(e){
+    e.preventDefault();
+    document.body.classList.add("dragging");
+  });
+  document.addEventListener("dragleave", function(e){
+    if(e.relatedTarget === null) document.body.classList.remove("dragging");
+  });
+  document.addEventListener("drop", function(e){
+    e.preventDefault();
+    document.body.classList.remove("dragging");
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) readFile(f);
+  });
+
+  /* ---------------- export ---------------- */
+  document.getElementById("btnExport").addEventListener("click", function(){
+    var svg = host.querySelector("svg");
+    if(!svg){ toast("暂无可导出的图形", true); return; }
+    var clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns", NS);
+    var style = document.createElementNS(NS, "style");
+    style.textContent = "text{font-family:" + FONT + "}";
+    clone.insertBefore(style, clone.firstChild);
+    var source = new XMLSerializer().serializeToString(clone);
+    var blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + source], { type: "image/svg+xml;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = (DATA.meta.title || "rhythm-curve") + "-节奏曲线.svg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    toast("已导出 SVG");
+  });
+
+  /* ---------------- boot ---------------- */
+  if(window.RHYTHM_DATA){
+    try { loadRaw(window.RHYTHM_DATA, "内置示例（20 章示范档案）"); }
+    catch(err){ toast("内置示例载入失败：" + err.message, true); renderEmpty(); }
+  } else {
+    renderHeader();
+    renderEmpty();
+  }
+})();
+</script>
+</body>
+</html>

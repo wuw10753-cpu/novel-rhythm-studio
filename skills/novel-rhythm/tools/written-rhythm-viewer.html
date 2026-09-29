@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>写作实况曲线 · 节奏工坊</title>
+<style>
+  :root{
+    --brand:#7C5CFF;
+    --ink:#2B3244;
+    --ink-2:#5D6577;
+    --ink-3:#8B93A5;
+    --line:#E7EAF0;
+    --bg:#F5F6FA;
+    --card:#FFFFFF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+    font-size:14px;line-height:1.6;
+  }
+  .hero{background:var(--card);border-bottom:1px solid var(--line)}
+  .hero-inner{max-width:1280px;margin:0 auto;padding:18px 24px 12px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--brand);white-space:nowrap}
+  .brand-mark{font-size:18px}
+  .brand-sub{font-size:11px;font-weight:400;color:var(--ink-3);letter-spacing:.06em}
+  .hero-text{flex:1;min-width:220px}
+  .hero-text h1{margin:0;font-size:20px;line-height:1.3}
+  .hero-text .subtitle{margin:2px 0 0;font-size:12.5px;color:var(--ink-2)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{
+    border:1px solid #D9DEE8;background:#fff;color:var(--ink);
+    border-radius:9px;padding:8px 15px;font-size:13px;cursor:pointer;
+    font-family:inherit;transition:all .12s;white-space:nowrap;
+  }
+  .btn:hover{background:#F2F3F8}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:hover{background:#6a4cf0}
+  .btn.mini{padding:5px 11px;font-size:12px;border-radius:8px}
+  .toggle{
+    display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);
+    cursor:pointer;user-select:none;background:#fff;border:1px solid #D9DEE8;
+    border-radius:9px;padding:8px 13px;white-space:nowrap;
+  }
+  .toggle input{accent-color:var(--brand);margin:0}
+  .legend{max-width:1280px;margin:0 auto;padding:0 24px 12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);align-items:center}
+  .legend .chip{display:inline-flex;align-items:center;gap:6px}
+  .legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .legend .dash{width:22px;height:0;border-top:2px dashed #B9C0D0;display:inline-block}
+  .legend .solid{width:22px;height:0;border-top:2px solid #4A5163;display:inline-block}
+  main{max-width:1280px;margin:0 auto;padding:18px 24px 8px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(20,30,60,.06);padding:18px 20px;margin-bottom:18px}
+  .card-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .card-head h2{margin:0;font-size:15.5px}
+  .hint{margin:0;font-size:12px;color:var(--ink-3)}
+  .stats{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 12px}
+  .stat{background:#F1F3F8;border-radius:999px;padding:4px 12px;font-size:12px;color:var(--ink-2)}
+  .stat b{color:var(--ink)}
+  .stat.warn{background:#FCF3E6;color:#9A6B1F}
+  .chart-scroll{overflow-x:auto;padding-bottom:6px}
+  .chart-wrap{position:relative;display:inline-block;min-width:100%}
+  .tooltip{
+    position:absolute;z-index:20;pointer-events:none;
+    background:rgba(30,34,48,.95);color:#fff;border-radius:9px;
+    padding:10px 12px;font-size:12px;line-height:1.55;max-width:340px;
+    opacity:0;transform:translateY(3px);transition:opacity .12s,transform .12s;
+    box-shadow:0 6px 20px rgba(20,24,40,.28);
+  }
+  .tooltip.show{opacity:1;transform:translateY(0)}
+  .tooltip .tt-head{font-weight:700;font-size:12.5px;margin-bottom:3px}
+  .tooltip .tt-meta{color:#C9CEE0;margin-bottom:4px}
+  .tooltip .tt-line{color:#E4E7F2}
+  .tooltip .tt-plan{color:#A9E8C0}
+  .tooltip .tt-tip{margin-top:6px;color:#9BA3C0;font-size:11px}
+  .empty{padding:46px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+  .empty b{color:var(--ink-2)}
+  .empty .steps{display:inline-block;text-align:left;margin:8px auto 0;font-size:12.5px;line-height:2}
+  .detail-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+  .detail-title{font-size:16px;font-weight:700}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{background:#F1F3F8;border-radius:999px;padding:3px 11px;font-size:12px;color:var(--ink-2)}
+  .badge.tpl{background:rgba(124,92,255,.12);color:#6a4cf0;font-weight:700}
+  .badge.src-est{background:#FCF3E6;color:#9A6B1F}
+  .badge.src-ann{background:rgba(69,176,126,.14);color:#2F7D59}
+  .badge.tension{color:#fff}
+  .detail-lines{margin:10px 0 2px;font-size:13px;color:var(--ink-2)}
+  .detail-lines p{margin:3px 0}
+  .detail-lines b{color:var(--ink)}
+  .beats-title{margin:16px 0 6px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .beats-title .sub{font-weight:400;font-size:12px;color:var(--ink-3)}
+  .beat-svg-host{overflow-x:auto}
+  .beat-list{margin-top:10px;border-top:1px solid var(--line)}
+  .beat-row{
+    display:grid;grid-template-columns:44px 72px 88px 30px 1fr;
+    align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid #F3F4F8;font-size:13px;
+  }
+  .beat-idx{color:var(--ink-3);font-size:12px;text-align:center}
+  .beat-name{font-weight:600;font-size:12.5px}
+  .beat-bar{background:#EEF0F5;border-radius:99px;height:7px;overflow:hidden}
+  .beat-bar i{display:block;height:100%;border-radius:99px}
+  .beat-t{font-weight:700;text-align:center;font-size:12.5px}
+  .beat-desc{color:var(--ink-2);font-size:12.5px}
+  .off-note{padding:16px 18px;border:1px dashed var(--line);border-radius:10px;color:var(--ink-3);font-size:12.5px;background:#FAFBFD}
+  .modal{position:fixed;inset:0;background:rgba(20,24,40,.45);display:none;align-items:center;justify-content:center;z-index:60}
+  .modal.show{display:flex}
+  .modal-box{background:#fff;border-radius:12px;padding:18px 20px;width:min(720px,92vw);box-shadow:0 18px 50px rgba(20,24,40,.3)}
+  .modal-box h3{margin:0 0 4px;font-size:15px}
+  .modal-box .mhint{margin:0 0 10px;font-size:12px;color:var(--ink-3)}
+  .modal-box textarea{
+    width:100%;height:280px;border:1px solid var(--line);border-radius:9px;padding:12px;
+    font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.5;resize:vertical;color:var(--ink);
+  }
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translate(-50%,14px);
+    background:rgba(30,34,48,.95);color:#fff;border-radius:999px;padding:9px 20px;
+    font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:80;max-width:80vw;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.error{background:#C0392B}
+  #dropHint{
+    position:fixed;left:50%;top:20px;transform:translate(-50%,-8px);
+    background:var(--brand);color:#fff;border-radius:999px;padding:9px 22px;font-size:13px;
+    opacity:0;pointer-events:none;transition:all .16s;z-index:70;
+  }
+  body.dragging #dropHint{opacity:1;transform:translate(-50%,0)}
+  footer{max-width:1280px;margin:0 auto;padding:4px 24px 40px;font-size:12px;color:var(--ink-3)}
+  footer code{background:#ECEFF5;border-radius:5px;padding:1px 6px;font-size:11.5px}
+  footer a{color:var(--brand);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand"><span class="brand-mark">◈</span>写作实况曲线<span class="brand-sub">Written Rhythm Viewer</span></div>
+    <div class="hero-text">
+      <h1>把写完的章节丢进来，看实际写出来的节奏</h1>
+      <p class="subtitle">主视图 = 多章节实况曲线 · 点任意章节看章内曲线（可选）· 可叠加粗纲对比 · 全程离线</p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btnPickFiles">选择章节文件</button>
+      <button class="btn" id="btnPickDir">选择文件夹</button>
+      <button class="btn" id="btnPaste">粘贴文本</button>
+      <button class="btn" id="btnDemo">载入演示</button>
+      <button class="btn" id="btnCompare">对比粗纲</button>
+      <button class="btn" id="btnExport">导出 SVG</button>
+      <label class="toggle"><input type="checkbox" id="chkBeats" checked>章内曲线</label>
+    </div>
+  </div>
+  <div class="legend" id="legend"></div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="card-head">
+      <h2>多章节实况曲线</h2>
+      <p class="hint">张力 1~5 · 节点色 = 张力 · 标注优先、估算兜底 · 虚线 = 粗纲计划（载入后）</p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="chart-scroll">
+      <div class="chart-wrap" id="chartWrap">
+        <div id="chartSvgHost"></div>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="detailCard">
+    <div id="detailBody"></div>
+  </section>
+</main>
+
+<footer>
+  章节文件格式：.md / .txt · 标注规范见 <code>references/outline-schema.md</code> 第五节 ·
+  规划用查看器：<a href="rhythm-viewer.html">rhythm-viewer.html</a> ·
+  章内节拍模板见 <code>references/chapter-templates.md</code>
+</footer>
+
+<input type="file" id="fileInput" multiple accept=".md,.txt,.markdown,text/markdown,text/plain" hidden>
+<input type="file" id="dirInput" webkitdirectory multiple hidden>
+<input type="file" id="outlineInput" accept=".json,application/json" hidden>
+<div id="dropHint">松开鼠标：载入章节文件（可整个文件夹拖进来）</div>
+
+<div class="modal" id="pasteModal">
+  <div class="modal-box">
+    <h3>粘贴章节文本</h3>
+    <p class="mhint">单章直接粘贴；多章之间用一行 <code>===</code> 分隔。可选在开头写节奏标注行（见下方示例）。</p>
+    <textarea id="pasteArea" spellcheck="false" placeholder="# 第01章 试探&#10;&#10;<!-- rhythm: tension=3; type=登场章; template=T4; beats=2,3,3,4,2 -->&#10;&#10;（正文……）"></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="btnPasteCancel">关闭</button>
+      <button class="btn primary" id="btnPasteLoad">载入</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/*==DEMO-CHAPTERS-START==*/
+window.DEMO_CHAPTERS = [
+  { file: "第01章_试探.md", text: "# 第01章 试探\n\n　　茶楼二层，靠窗的位置，主角把斗笠压得很低。\n\n　　“听说北边又打起来了。”\n\n　　“打就打，跟咱们有什么关系。”\n\n　　说书人拍下醒木，唾沫横飞。跑堂的端着茶壶穿梭，热汽糊了半张窗。\n\n　　主角慢慢喝完第三碗茶，把铜钱压在碗底，起身下楼。楼下的账房抬头看了他一眼，又低下去。\n\n　　“这位客官，”跑堂的追出来，“您落了东西。”\n\n　　那是一张纸，上头只有四个字：别去北山。\n\n　　主角捏着纸站了很久，最后把它折好收进袖子。" },
+  { file: "第02章_追兵.md", text: "# 第02章 追兵\n\n<!-- rhythm: tension=4; type=落地章; template=T5; beats=3,4,5,3,3 -->\n\n　　破空声从背后追上来。\n\n　　主角翻身掠上屋脊，一柄飞剑擦着耳根钉进瓦里，剑尾震颤不休。\n\n　　“跑什么？”女人的声音不高，却压得半条街都安静下来，“把话说清楚。”\n\n　　主角不敢停。停一步，就是一掌断魂。\n\n　　瓦片在脚下接连碎裂，他一路狂奔，风把斗笠掀了，露出半张脸。\n\n　　追兵越逼越近，杀意像潮水漫过背脊。\n\n　　“再跑，我就动真格了。”\n\n　　主角一咬牙，从屋脊上跳了下去，落入人群，钻进巷子，遁入市声。" },
+  { file: "第03章_盘点.md", text: "# 第03章 盘点\n\n　　主角把门窗闩好，从怀里掏出那只木匣。\n\n　　匣子里是三样东西：一枚旧令牌、半张残图、还有一颗灰扑扑的石头。\n\n　　令牌边角有细密的齿痕，残图的墨是新的；石头倒是沉，压手。\n\n　　他在桌上排开纸笔，一条一条记。\n\n　　追他的人从哪来，不知道。为什么追，也不完全知道。\n\n　　但有一点能确定：那晚的事，有人比他更怕被查。\n\n　　主角吹灭灯，坐在黑暗里，忽然笑了一声。\n\n　　“行啊，”他自言自语，“那就查。”" },
+  { file: "第04章_摊牌.md", text: "# 第04章 摊牌\n\n<!-- rhythm: tension=4; type=爽点章; template=T11; beats=3,4,5,4,3 -->\n\n　　掌柜把算盘一推：“不卖。”\n\n　　“没说不卖，”主角说，“是看人下菜。”\n\n　　“你看得懂？”\n\n　　主角伸出手指，点了点货架上第三块胚子：“这块有暗裂，你拿它当上品。第二块倒是好东西，可惜被你搁在最角落，落灰。”\n\n　　掌柜脸色变了。\n\n　　主角把布袋往柜台上一放，袋口松开，灵石滚出来，叮叮当当铺了半张台面。\n\n　　围观的人先是静，再是嗡的一声炸开。\n\n　　掌柜抓起一块灵石对着光看，手有点抖。\n\n　　“你哪来这么多……”\n\n　　“你管不着。”主角把两块胚子揽进怀里，“算钱。”" },
+  { file: "第05章_夜话.md", text: "# 第05章 夜话\n\n　　客栈后院的井边，孤女蹲着搓衣服，搓两下，抬眼看一下门口。\n\n　　主角靠在门框上，把一天的账在心里过了一遍，过到一半，走了神。\n\n　　“你不困？”孤女小声问。\n\n　　“困。”他打了个哈欠，“但我一睡着，就有人在梦里追我。”\n\n　　孤女不说话了，低头继续搓衣服。搓了一会儿，她小声说：“那你先睡，我替你盯着。”\n\n　　主角愣了一下。\n\n　　“盯着什么？”\n\n　　“盯着门口。”她说得很认真，“有人来，我就喊你。”" }
+];
+/*==DEMO-CHAPTERS-END==*/
+
+/*==SCORING-CORE-START==*/
+/* 估算核心：字数·对话占比·动作情绪词密度 → 1~5 档（估算兜底用，标注优先）
+   短文本用 SCORE_FLOOR 压归一化，避免几十字的段落被"千字密度"放大到顶格 */
+var SCORE_FLOOR = 250;
+var ACTION_RE = /[打杀斩劈刺轰爆炸碎裂撞逃追擒怒吼喝惊危死血伤剑刀拳掌抢夺破闪避斗战踢踹奔冲砸摔拖拽扑袭逼挡抡戳挑撕咬翻跳钻遁窜闯席卷挥扫掠射掷抛甩压锁缚缠绕躲潜伏滚扑]/g;
+var EMO_RE = /[笑泪哭疼痛慌惧喜悲恨爱痴愣怔颤抖叹]/g;
+
+function roughScore(text){
+  var chars = text.replace(/\s/g, "").length || 1;
+  var bang = (text.match(/[！!？?]/g) || []).length;
+  var act = (text.match(ACTION_RE) || []).length;
+  var emo = (text.match(EMO_RE) || []).length;
+  var dia = 0;
+  var dm = text.match(/「[^」]*」|“[^”]*”|"[^"]*"/g);
+  if (dm) { for (var i = 0; i < dm.length; i++) dia += dm[i].length; }
+  var k = 1000 / Math.max(chars, SCORE_FLOOR);
+  var r = dia / chars;
+  return (bang * 2 + act * 1.5 + emo * 1.2) * k + r * 100 * 0.18 + 5;
+}
+
+function scoreToT(g){
+  if (g < 21) return 1;
+  if (g < 35) return 2;
+  if (g < 49) return 3;
+  if (g < 65) return 4;
+  return 5;
+}
+
+/* 分段：场景分隔线优先，否则按段落归并为 3~6 段 */
+function splitSegments(text){
+  var sepRe = /^[ \t　]*(?:[-*=_—※◆]{3,})[ \t　]*$/m;
+  var parts = text.split(sepRe).map(function(s){ return s.trim(); }).filter(Boolean);
+  if (parts.length >= 2) return { segments: parts, mode: "场景分隔线" };
+  var paras = text.split(/\n\s*\n/).map(function(s){ return s.trim(); }).filter(Boolean);
+  if (paras.length <= 1) paras = [text];
+  var chars = text.replace(/\s/g, "").length;
+  var n = Math.min(6, Math.max(3, Math.round(chars / 800)));
+  if (paras.length <= n) return { segments: paras, mode: "段落" };
+  var segs = [], total = paras.reduce(function(a, p){ return a + p.length; }, 0);
+  var target = total / n, cur = "", acc = 0;
+  paras.forEach(function(p){
+    cur += (cur ? "\n\n" : "") + p;
+    acc += p.length;
+    if (acc >= target && segs.length < n - 1) { segs.push(cur); cur = ""; acc = 0; }
+  });
+  if (cur) segs.push(cur);
+  return { segments: segs, mode: "段落等分" };
+}
+/*==SCORING-CORE-END==*/
+
+(function(){
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  var T_COLORS = ["#5B8DEF", "#45B07E", "#E0B335", "#E07B39", "#D64550"];
+  var DEFAULT_SCALE = ["1=舒缓/情感", "2=日常", "3=小起伏", "4=高潮/爽点", "5=强钩子"];
+  var TAG_MAP = {
+    "钩子章":"钩","设定章":"设","登场章":"喜","机制章":"机","信息章":"息","伏笔章":"伏",
+    "转折章":"转","铺垫章":"铺","爽点章":"爽","高潮章":"潮","收获章":"收","喘息章":"息",
+    "铺设章":"铺","蓄力章":"蓄","落地章":"惊"
+  };
+  var FONT = "'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif";
+
+  var CHAPTERS = [];          /* 实况章节 */
+  var OUTLINE = null;         /* 粗纲 {map:{no->plan}, count} */
+  var compareOn = false;
+  var selected = 0;
+
+  var host = document.getElementById("chartSvgHost");
+  var wrap = document.getElementById("chartWrap");
+  var tooltip = document.getElementById("tooltip");
+  var detailBody = document.getElementById("detailBody");
+  var legendEl = document.getElementById("legend");
+  var statsEl = document.getElementById("stats");
+  var toastEl = document.getElementById("toast");
+  var fileInput = document.getElementById("fileInput");
+  var dirInput = document.getElementById("dirInput");
+  var outlineInput = document.getElementById("outlineInput");
+  var pasteModal = document.getElementById("pasteModal");
+  var pasteArea = document.getElementById("pasteArea");
+  var chkBeats = document.getElementById("chkBeats");
+  var toastTimer = null;
+
+  /* ---------------- helpers ---------------- */
+  function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+  function num(v, d){ var n = Number(v); return isFinite(n) ? n : d; }
+  function esc(s){
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+  function colorFor(t){ return T_COLORS[clamp(Math.round(t), 1, 5) - 1]; }
+  function fmtT(t){ var n = num(t, 3); return (Math.round(n) === n) ? String(n) : n.toFixed(1); }
+  function tagOf(c){
+    if (c.type && TAG_MAP[c.type]) return TAG_MAP[c.type];
+    if (c.type) return String(c.type).replace(/章$/, "").charAt(0);
+    return "·";
+  }
+  function dirOf(t){ if (t >= 4) return "★"; if (t >= 3) return "▲"; return "▼"; }
+  function toast(msg, isError){
+    toastEl.textContent = msg;
+    toastEl.classList.toggle("error", !!isError);
+    toastEl.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2800);
+  }
+
+  /* ---------------- 标注解析 ---------------- */
+  function parseNums(s){ return (String(s).match(/[1-5]/g) || []).map(Number); }
+
+  function parseAnnotation(head){
+    var out = { tension: null, type: "", template: "", beats: null, src: "" };
+    var m = head.match(/<!--\s*rhythm\s*:\s*([\s\S]*?)-->/i);
+    if (m) {
+      var body = m[1];
+      var tm = body.match(/tension\s*=\s*([1-5])/i); if (tm) out.tension = +tm[1];
+      var ym = body.match(/type\s*=\s*([^;]+)/i); if (ym) out.type = ym[1].trim();
+      var pm = body.match(/template\s*=\s*([^;]+)/i); if (pm) out.template = pm[1].trim().toUpperCase();
+      var bm = body.match(/beats?\s*=\s*([\d\s,，、]+)/i); if (bm) out.beats = parseNums(bm[1]);
+      if (out.tension != null || out.type || out.beats) out.src = "标注";
+      return out;
+    }
+    var vm = head.match(/【节奏标注】([^\n]*)/);
+    if (vm) {
+      var s = vm[1];
+      var t2 = s.match(/张力\s*[:：]?\s*([1-5])/); if (t2) out.tension = +t2[1];
+      var y2 = s.match(/类型\s*[:：]\s*([^\s｜|,，]+)/); if (y2) out.type = y2[1];
+      var p2 = s.match(/模板\s*[:：]\s*(T\d+|V\d+)/i); if (p2) out.template = p2[1].toUpperCase();
+      var b2 = s.match(/(?:节拍|拍点)\s*[:：]\s*([\d\s,，、]+)/); if (b2) out.beats = parseNums(b2[1]);
+      if (out.tension != null || out.type || out.beats) out.src = "标注";
+      return out;
+    }
+    var l = head.match(/张力\s*[:：]\s*([1-5])/);
+    if (l) { out.tension = +l[1]; out.src = "标注"; }
+    return out;
+  }
+
+  /* ---------------- 分段与估算 ---------------- */
+  function preview(s){
+    var t = s.replace(/^\s*#+\s.*$/gm, "").replace(/\s+/g, " ").trim();
+    return t.length > 46 ? t.slice(0, 46) + "…" : t;
+  }
+
+  function labelFromName(name){
+    var t = String(name).replace(/\.[^.]+$/, "");
+    var m = t.match(/第\s*\d+\s*[章话回节][_\-—\s]*(.*)$/);
+    if (m && m[1]) return m[1].replace(/[_\-]+/g, " ").trim();
+    return t.replace(/[_\-]+/g, " ").trim();
+  }
+  function noFromName(name){
+    var m = String(name).match(/第\s*(\d+)\s*[章话回节]/) || String(name).match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function cleanLabel(l){
+    return String(l).replace(/^第\s*\d+\s*[章话回节]\s*[·：:、.。_\-—]*\s*/, "").trim();
+  }
+
+  function parseChapter(fileName, text){
+    var raw = String(text).replace(/\r\n?/g, "\n");
+    var lines = raw.split("\n");
+    var head = lines.slice(0, 40).join("\n");
+    var ann = parseAnnotation(head);
+    var heading = "";
+    var hm = raw.match(/^\s*#\s+(.+)$/m);
+    if (hm) heading = hm[1].trim();
+    var body = raw.replace(/<!--\s*rhythm[\s\S]*?-->/ig, "").replace(/【节奏标注】[^\n]*/g, "");
+    var seg = splitSegments(body);
+    var segs = seg.segments.map(function(s, i){
+      return { name: "段" + (i + 1), tension: scoreToT(roughScore(s)), desc: preview(s), chars: s.replace(/\s/g, "").length };
+    });
+    var beats = (ann.beats && ann.beats.length) ?
+      ann.beats.map(function(t, i){ return { name: "拍" + (i + 1), tension: clamp(t, 1, 5), desc: "" }; }) : null;
+    var tension, src;
+    if (ann.tension != null) { tension = ann.tension; src = "标注"; }
+    else if (beats) {
+      var bmax = beats.reduce(function(a, b){ return Math.max(a, b.tension); }, 1);
+      tension = bmax; src = "标注";
+    } else {
+      var ts = segs.map(function(s){ return s.tension; });
+      var mx = ts.reduce(function(a, b){ return Math.max(a, b); }, 1);
+      var mean = ts.reduce(function(a, b){ return a + b; }, 0) / ts.length;
+      tension = clamp(Math.ceil(mx * 0.55 + mean * 0.45 - 0.5), 1, 5);
+      src = "估算";
+    }
+    var labelRaw = heading || labelFromName(fileName);
+    return {
+      no: noFromName(fileName),
+      label: cleanLabel(labelRaw) || labelRaw,
+      file: fileName,
+      chars: body.replace(/\s/g, "").length,
+      type: ann.type || "", template: ann.template || "",
+      tension: tension, src: src,
+      segs: segs, segMode: seg.mode, beats: beats
+    };
+  }
+
+  /* ---------------- 排序 / 合并 ---------------- */
+  function sortChapters(list){
+    list.sort(function(a, b){
+      if (a.no != null && b.no != null && a.no !== b.no) return a.no - b.no;
+      return String(a.file).localeCompare(String(b.file), "zh-Hans-CN", { numeric: true });
+    });
+    list.forEach(function(c, i){ if (c.no == null) c.no = i + 1; });
+  }
+  function mergeChapters(list){
+    list.forEach(function(nc){
+      var idx = -1;
+      for (var i = 0; i < CHAPTERS.length; i++) { if (CHAPTERS[i].file === nc.file) { idx = i; break; } }
+      if (idx >= 0) CHAPTERS[idx] = nc; else CHAPTERS.push(nc);
+    });
+    sortChapters(CHAPTERS);
+    selected = 0;
+    renderAll();
+  }
+
+  /* ---------------- 读文件 ---------------- */
+  function isChapterFile(f){
+    if (/\.(md|txt|markdown)$/i.test(f.name)) return true;
+    if (f.type && f.type.indexOf("text") === 0) return true;
+    return false;
+  }
+  function readFiles(fileList){
+    var files = Array.prototype.slice.call(fileList).filter(isChapterFile);
+    if (!files.length) { toast("没有找到 .md / .txt 章节文件", true); return; }
+    var jobs = files.map(function(f){
+      return new Promise(function(res){
+        var r = new FileReader();
+        r.onload = function(){ try { res(parseChapter(f.name, String(r.result))); } catch(e){ res(null); } };
+        r.onerror = function(){ res(null); };
+        r.readAsText(f, "utf-8");
+      });
+    });
+    Promise.all(jobs).then(function(list){
+      list = list.filter(Boolean);
+      if (!list.length) { toast("读取失败（请确认文件为 UTF-8 文本）", true); return; }
+      mergeChapters(list);
+      toast("已载入 " + list.length + " 章（同名文件会覆盖，可分批继续拖入）");
+    });
+  }
+
+  function collectDropped(dt){
+    var items = dt.items ? Array.prototype.slice.call(dt.items) : [];
+    var entries = [];
+    items.forEach(function(it){
+      if (it.kind === "file" && it.webkitGetAsEntry) {
+        var e = it.webkitGetAsEntry();
+        if (e) entries.push(e);
+      }
+    });
+    if (!entries.length) return Promise.resolve(dt.files ? Array.prototype.slice.call(dt.files) : []);
+    var out = [];
+    function walk(entry){
+      return new Promise(function(res){
+        if (entry.isFile) {
+          entry.file(function(f){ out.push(f); res(); }, function(){ res(); });
+        } else if (entry.isDirectory) {
+          var reader = entry.createReader();
+          var step = function(){
+            reader.readEntries(function(batch){
+              if (!batch.length) { res(); return; }
+              Promise.all(batch.map(walk)).then(step);
+            }, function(){ res(); });
+          };
+          step();
+        } else { res(); }
+      });
+    }
+    return Promise.all(entries.map(walk)).then(function(){ return out; });
+  }
+
+  /* ---------------- 粗纲对比 ---------------- */
+  function normOutline(raw){
+    if (!raw || !Array.isArray(raw.chapters)) throw new Error("不是节奏档案（缺少 chapters 数组）");
+    var map = {};
+    raw.chapters.forEach(function(c){
+      var no = num(c.no, null);
+      if (no == null) return;
+      map[no] = {
+        no: no, label: c.label || "", tension: clamp(num(c.tension, 3), 1, 5),
+        template: c.template || "", type: c.type || "",
+        beats: Array.isArray(c.beats) ? c.beats.filter(function(b){ return b && b.name; }).map(function(b){
+          return { name: b.name, tension: clamp(num(b.tension, 3), 1, 5), desc: b.desc || "" };
+        }) : []
+      };
+    });
+    return { meta: raw.meta || {}, map: map, count: raw.chapters.length };
+  }
+  function loadOutlineText(text){
+    var raw;
+    try { raw = JSON.parse(text); } catch(e){ toast("粗纲 JSON 解析失败：" + e.message, true); return; }
+    try {
+      OUTLINE = normOutline(raw);
+      compareOn = true;
+      renderAll();
+      toast("已载入粗纲对比（" + OUTLINE.count + " 章）");
+    } catch(e){ toast("载入失败：" + e.message, true); }
+  }
+
+  /* ---------------- 渲染：头部与统计 ---------------- */
+  function renderLegend(){
+    var scale = DEFAULT_SCALE;
+    var html = "";
+    scale.forEach(function(item, i){
+      var parts = String(item).split("=");
+      html += '<span class="chip"><span class="dot" style="background:' + T_COLORS[i % 5] + '"></span>' + esc(parts.length > 1 ? parts[1] : item) + "</span>";
+    });
+    html += '<span class="chip"><span class="solid"></span>实况</span>';
+    if (compareOn) html += '<span class="chip"><span class="dash"></span>粗纲计划</span>';
+    legendEl.innerHTML = html;
+  }
+
+  function renderStats(){
+    if (!CHAPTERS.length) { statsEl.innerHTML = ""; return; }
+    var total = CHAPTERS.reduce(function(a, c){ return a + c.chars; }, 0);
+    var ann = CHAPTERS.filter(function(c){ return c.src === "标注"; }).length;
+    var est = CHAPTERS.length - ann;
+    var avg = CHAPTERS.reduce(function(a, c){ return a + c.tension; }, 0) / CHAPTERS.length;
+    var html = "";
+    html += '<span class="stat">共 <b>' + CHAPTERS.length + "</b> 章</span>";
+    html += '<span class="stat">总字数 <b>' + total + "</b></span>";
+    html += '<span class="stat">平均张力 <b>' + avg.toFixed(1) + "</b></span>";
+    html += '<span class="stat">标注 <b>' + ann + "</b> / 估算 <b>" + est + "</b></span>";
+    if (est > 0) html += '<span class="stat warn">有 ' + est + " 章未标注，按估算显示（让 AI 依正文补标注可提高准确度）</span>";
+    if (compareOn && OUTLINE) html += '<span class="stat">粗纲对比：<b>' + OUTLINE.count + "</b> 章 <button class=\"btn mini\" id=\"btnCompareClear\">清除</button></span>";
+    statsEl.innerHTML = html;
+    var clr = document.getElementById("btnCompareClear");
+    if (clr) clr.addEventListener("click", function(){ compareOn = false; renderAll(); toast("已关闭粗纲对比"); });
+  }
+
+  /* ---------------- 渲染：主图 ---------------- */
+  function renderChart(){
+    var chs = CHAPTERS;
+    var n = chs.length;
+    if (!n) { renderEmpty(); return; }
+
+    var PAD = { top: 76, right: 48, bottom: 96, left: 60 };
+    var plotH = 300;
+    var plotBottom = PAD.top + plotH;
+    var idealStep = 76;
+    var width = Math.max(900, PAD.left + PAD.right + Math.max(n - 1, 1) * idealStep);
+    var step = n > 1 ? (width - PAD.left - PAD.right) / (n - 1) : 0;
+    var height = plotBottom + PAD.bottom;
+
+    function x(i){ return n > 1 ? PAD.left + i * step : PAD.left + (width - PAD.left - PAD.right) / 2; }
+    function y(t){ return PAD.top + plotH * (1 - (clamp(t, 1, 5) - 1) / 4); }
+
+    var s = '<svg xmlns="' + NS + '" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + " " + height + '" font-family="' + FONT + '" role="img" aria-label="多章节实况曲线">';
+    s += '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">' +
+         '<stop offset="0" stop-color="#7C5CFF" stop-opacity="0.16"/>' +
+         '<stop offset="1" stop-color="#7C5CFF" stop-opacity="0.02"/></linearGradient></defs>';
+
+    for (var t = 1; t <= 5; t++) {
+      var gy = y(t);
+      s += '<line x1="' + (PAD.left - 10) + '" y1="' + gy + '" x2="' + (width - PAD.right + 10) + '" y2="' + gy + '" stroke="#E7EAF0" stroke-width="1"' + (t === 1 ? "" : ' stroke-dasharray="3 5"') + "/>";
+      s += '<text x="' + (PAD.left - 18) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="#9AA3B2">' + t + "</text>";
+    }
+
+    var pts = chs.map(function(c, i){ return [x(i), y(c.tension)]; });
+    var areaPath = "M" + pts[0][0] + " " + plotBottom;
+    pts.forEach(function(p){ areaPath += " L" + p[0] + " " + p[1]; });
+    areaPath += " L" + pts[n - 1][0] + " " + plotBottom + " Z";
+    s += '<path d="' + areaPath + '" fill="url(#areaGrad)"/>';
+
+    /* 粗纲虚线 */
+    if (compareOn && OUTLINE) {
+      var ppts = [];
+      chs.forEach(function(c, i){
+        var p = OUTLINE.map[c.no];
+        if (p) ppts.push([x(i), y(p.tension)]);
+      });
+      if (ppts.length > 1) {
+        var dpath = ppts.map(function(p, i){ return (i ? "L" : "M") + p[0] + " " + p[1]; }).join(" ");
+        s += '<path d="' + dpath + '" fill="none" stroke="#B9C0D0" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>';
+        ppts.forEach(function(p){
+          s += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.2" fill="#FFFFFF" stroke="#B9C0D0" stroke-width="1.5"/>';
+        });
+      }
+    }
+
+    var linePath = pts.map(function(p, i){ return (i ? "L" : "M") + p[0] + " " + p[1]; }).join(" ");
+    s += '<path d="' + linePath + '" fill="none" stroke="#4A5163" stroke-width="2" stroke-linejoin="round"/>';
+
+    chs.forEach(function(c, i){
+      var cx = x(i), cy = y(c.tension);
+      var col = colorFor(c.tension);
+      var sel = (i === selected);
+      if (sel) s += '<circle cx="' + cx + '" cy="' + cy + '" r="14" fill="none" stroke="' + col + '" stroke-opacity="0.3" stroke-width="6"/>';
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (sel ? 8 : 6.5) + '" fill="' + col + '" stroke="#FFFFFF" stroke-width="2"/>';
+      s += '<text x="' + cx + '" y="' + (cy - 16) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + col + '">' + fmtT(c.tension) + "</text>";
+      s += '<text x="' + cx + '" y="' + (cy + 23) + '" text-anchor="middle" font-size="11" fill="' + col + '">' + esc(dirOf(c.tension) + tagOf(c)) + "</text>";
+      s += '<text x="' + cx + '" y="' + (plotBottom + 48) + '" text-anchor="middle" font-size="11" fill="#7A8296">' + c.no + "</text>";
+      s += '<text x="' + cx + '" y="' + (plotBottom + 64) + '" text-anchor="middle" font-size="10" fill="#A8B0BF">' + esc(c.src === "估算" ? "估" : (c.template || "标")) + "</text>";
+    });
+
+    chs.forEach(function(c, i){
+      var x1 = x(i) - step * 0.5;
+      var w = step > 0 ? step : (width - PAD.left - PAD.right);
+      s += '<rect x="' + x1 + '" y="' + (PAD.top - 34) + '" width="' + w + '" height="' + (plotBottom - PAD.top + 34) + '" fill="rgba(0,0,0,0)" data-idx="' + i + '" style="cursor:pointer"/>';
+    });
+
+    s += "</svg>";
+    host.innerHTML = s;
+  }
+
+  function renderEmpty(){
+    host.innerHTML = '<div class="empty">' +
+      "<p><b>还没有载入章节</b></p>" +
+      '<div class="steps">' +
+      "① 把 <b>章节文件（.md / .txt）</b> 或整个文件夹拖进本页<br>" +
+      "② 或点右上角「选择章节文件 / 选择文件夹 / 粘贴文本」<br>" +
+      "③ 先看效果可点「载入演示」（5 章虚构片段）<br>" +
+      "④ 想看兑现度：点「对比粗纲」导入你的 rhythm-data.json" +
+      "</div></div>";
+    detailBody.innerHTML = '<div class="off-note">载入章节后，点击曲线上的任意章节节点即可查看该章的章内曲线（右上角可开关）。</div>';
+  }
+
+  /* ---------------- tooltip ---------------- */
+  function showTooltip(idx, e){
+    var c = CHAPTERS[idx];
+    if (!c) return;
+    var html = '<div class="tt-head">第 ' + c.no + " 章 · " + esc(c.label) + "</div>";
+    html += '<div class="tt-meta">张力 ' + fmtT(c.tension) + "（" + esc(c.src) + "）" +
+            (c.type ? " · " + esc(c.type) : "") + (c.template ? " · " + esc(c.template) : "") + "</div>";
+    html += '<div class="tt-line">字数 ' + c.chars + " · 章内 " + c.segs.length + " 段（" + esc(c.segMode) + "）</div>";
+    html += '<div class="tt-line">文件：' + esc(c.file) + "</div>";
+    if (compareOn && OUTLINE && OUTLINE.map[c.no]) {
+      var p = OUTLINE.map[c.no];
+      html += '<div class="tt-plan">粗纲：张力 ' + fmtT(p.tension) + (p.template ? " · " + esc(p.template) : "") + "</div>";
+    }
+    html += '<div class="tt-tip">点击查看章内曲线' + (chkBeats.checked ? "" : "（当前已关闭）") + "</div>";
+    tooltip.innerHTML = html;
+    tooltip.classList.add("show");
+    var wr = wrap.getBoundingClientRect();
+    var tx = e.clientX - wr.left + 16;
+    var ty = e.clientY - wr.top + 14;
+    tooltip.style.left = tx + "px";
+    tooltip.style.top = ty + "px";
+    var tr = tooltip.getBoundingClientRect();
+    if (tr.right > window.innerWidth - 10) tooltip.style.left = Math.max(4, tx - tr.width - 30) + "px";
+    if (tr.bottom > window.innerHeight - 10) tooltip.style.top = Math.max(4, ty - tr.height - 26) + "px";
+  }
+  function hideTooltip(){ tooltip.classList.remove("show"); }
+
+  host.addEventListener("mousemove", function(e){
+    var el = e.target.closest ? e.target.closest("[data-idx]") : null;
+    if (!el) { hideTooltip(); return; }
+    showTooltip(parseInt(el.getAttribute("data-idx"), 10), e);
+  });
+  host.addEventListener("mouseleave", hideTooltip);
+  host.addEventListener("click", function(e){
+    var el = e.target.closest ? e.target.closest("[data-idx]") : null;
+    if (!el) return;
+    var idx = parseInt(el.getAttribute("data-idx"), 10);
+    if (idx >= 0 && idx < CHAPTERS.length) { selected = idx; renderChart(); renderDetail(); }
+  });
+
+  /* ---------------- 详情 ---------------- */
+  function renderDetail(){
+    var c = CHAPTERS[selected];
+    if (!c) return;
+    var html = '<div class="detail-head">' +
+      '<div class="detail-title">第 ' + c.no + " 章 · " + esc(c.label) + "</div>" +
+      '<div class="badges">' +
+      (c.type ? '<span class="badge">' + esc(c.type) + "</span>" : "") +
+      (c.template ? '<span class="badge tpl">模板 ' + esc(c.template) + "</span>" : "") +
+      '<span class="badge tension" style="background:' + colorFor(c.tension) + '">张力 ' + fmtT(c.tension) + "</span>" +
+      '<span class="badge ' + (c.src === "标注" ? "src-ann" : "src-est") + '">' + (c.src === "标注" ? "标注" : "估算") + "</span>" +
+      "</div></div>";
+
+    var innerInfo = (c.beats && c.beats.length)
+      ? "<b>章内节拍：</b>" + c.beats.length + " 拍（标注）"
+      : "<b>章内：</b>" + c.segs.length + " 段（" + esc(c.segMode) + "）";
+    html += '<div class="detail-lines">';
+    html += "<p><b>文件：</b>" + esc(c.file) + " ｜ <b>字数：</b>" + c.chars + " ｜ " + innerInfo + "</p>";
+    if (c.src === "估算") html += "<p>张力为估算值：由字数、对话占比、动作/情绪词密度推得，仅供参考；在章节文件开头补一行节奏标注即可转为精确值。</p>";
+    if (compareOn && OUTLINE && OUTLINE.map[c.no]) {
+      var p = OUTLINE.map[c.no];
+      html += "<p><b>粗纲计划：</b>张力 " + fmtT(p.tension) + (p.template ? " · 模板 " + esc(p.template) : "") +
+              (p.type ? " · " + esc(p.type) : "") + "（实况与计划的差 = 兑现度检查点）</p>";
+    } else if (compareOn) {
+      html += "<p><b>粗纲计划：</b>该章号在粗纲中未找到。</p>";
+    }
+    html += "</div>";
+
+    if (!chkBeats.checked) {
+      html += '<div class="off-note">章内曲线已关闭（右上角「章内曲线」可开启）。</div>';
+      detailBody.innerHTML = html;
+      return;
+    }
+
+    if (c.beats && c.beats.length) {
+      html += '<div class="beats-title">章内节拍（标注） <span class="sub">共 ' + c.beats.length + " 拍</span></div>";
+      html += '<div class="beat-svg-host">' + buildMiniSvg(c.beats) + "</div>";
+      html += '<div class="beat-list">';
+      c.beats.forEach(function(b, i){
+        html += beatRow(i + 1, b.name, b.tension, b.desc || "（标注节拍）");
+      });
+      html += "</div>";
+    } else {
+      html += '<div class="beats-title">章内段落实况（估算） <span class="sub">按' + esc(c.segMode) + "切分 · 共 " + c.segs.length + " 段</span></div>";
+      html += '<div class="beat-svg-host">' + buildMiniSvg(c.segs) + "</div>";
+      html += '<div class="beat-list">';
+      c.segs.forEach(function(s2, i){
+        html += beatRow(i + 1, s2.name, s2.tension, s2.desc);
+      });
+      html += "</div>";
+    }
+
+    if (compareOn && OUTLINE && OUTLINE.map[c.no] && OUTLINE.map[c.no].beats.length) {
+      var pb = OUTLINE.map[c.no].beats;
+      html += '<div class="beats-title">粗纲计划节拍（对照） <span class="sub">共 ' + pb.length + " 拍</span></div>";
+      html += '<div class="beat-svg-host">' + buildMiniSvg(pb) + "</div>";
+    }
+
+    detailBody.innerHTML = html;
+  }
+
+  function beatRow(i, name, tension, desc){
+    return '<div class="beat-row">' +
+      '<span class="beat-idx">' + i + "</span>" +
+      '<span class="beat-name">' + esc(name) + "</span>" +
+      '<span class="beat-bar"><i style="width:' + (tension * 20) + "%;background:" + colorFor(tension) + '"></i></span>' +
+      '<span class="beat-t" style="color:' + colorFor(tension) + '">' + fmtT(tension) + "</span>" +
+      '<span class="beat-desc">' + esc(desc) + "</span>" +
+      "</div>";
+  }
+
+  function buildMiniSvg(list){
+    var k = list.length;
+    var W = 780, H = 172, L = 56, R = 30, TOP = 34, BOT = 46;
+    var plotW = W - L - R;
+    var plotBottom = H - BOT;
+    var plotH = plotBottom - TOP;
+
+    function bx(i){ return k > 1 ? L + i * (plotW / (k - 1)) : L + plotW / 2; }
+    function by(t){ return TOP + plotH * (1 - (clamp(t, 1, 5) - 1) / 4); }
+
+    var s = '<svg xmlns="' + NS + '" viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" font-family="' + FONT + '">';
+    for (var t = 1; t <= 5; t++) {
+      var gy = by(t);
+      s += '<line x1="' + (L - 10) + '" y1="' + gy + '" x2="' + (W - R + 10) + '" y2="' + gy + '" stroke="#EFF1F6" stroke-width="1"' + (t === 1 ? "" : ' stroke-dasharray="3 5"') + "/>";
+      s += '<text x="' + (L - 18) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="10.5" fill="#B0B7C6">' + t + "</text>";
+    }
+    var pts = list.map(function(b, i){ return [bx(i), by(b.tension)]; });
+    s += '<defs><linearGradient id="miniGrad" x1="0" y1="0" x2="0" y2="1">' +
+         '<stop offset="0" stop-color="#7C5CFF" stop-opacity="0.12"/>' +
+         '<stop offset="1" stop-color="#7C5CFF" stop-opacity="0.02"/></linearGradient></defs>';
+    if (k > 1) {
+      var area = "M" + pts[0][0] + " " + plotBottom;
+      pts.forEach(function(p){ area += " L" + p[0] + " " + p[1]; });
+      area += " L" + pts[k - 1][0] + " " + plotBottom + " Z";
+      s += '<path d="' + area + '" fill="url(#miniGrad)"/>';
+    }
+    var line = pts.map(function(p, i){ return (i ? "L" : "M") + p[0] + " " + p[1]; }).join(" ");
+    s += '<path d="' + line + '" fill="none" stroke="#4A5163" stroke-width="1.8" stroke-linejoin="round"/>';
+    list.forEach(function(b, i){
+      var cx = pts[i][0], cy = pts[i][1];
+      var col = colorFor(b.tension);
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="5.5" fill="' + col + '" stroke="#fff" stroke-width="1.6"/>';
+      s += '<text x="' + cx + '" y="' + (cy - 12) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="' + col + '">' + fmtT(b.tension) + "</text>";
+      s += '<text x="' + cx + '" y="' + (plotBottom + 22) + '" text-anchor="middle" font-size="10.5" fill="#7A8296">' + esc(b.name) + "</text>";
+    });
+    s += "</svg>";
+    return s;
+  }
+
+  function renderAll(){ renderLegend(); renderStats(); renderChart(); renderDetail(); }
+
+  /* ---------------- 事件 ---------------- */
+  document.getElementById("btnPickFiles").addEventListener("click", function(){ fileInput.click(); });
+  document.getElementById("btnPickDir").addEventListener("click", function(){ dirInput.click(); });
+  fileInput.addEventListener("change", function(){
+    if (fileInput.files && fileInput.files.length) readFiles(fileInput.files);
+    fileInput.value = "";
+  });
+  dirInput.addEventListener("change", function(){
+    if (dirInput.files && dirInput.files.length) readFiles(dirInput.files);
+    dirInput.value = "";
+  });
+  document.getElementById("btnDemo").addEventListener("click", function(){
+    var list = (window.DEMO_CHAPTERS || []).map(function(d){ return parseChapter(d.file, d.text); });
+    if (!list.length) { toast("演示数据缺失", true); return; }
+    CHAPTERS = list;
+    sortChapters(CHAPTERS);
+    selected = 0;
+    renderAll();
+    toast("已载入演示：5 章虚构片段（含标注与估算两种）");
+  });
+  document.getElementById("btnCompare").addEventListener("click", function(){ outlineInput.click(); });
+  outlineInput.addEventListener("change", function(){
+    var f = outlineInput.files && outlineInput.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function(){ loadOutlineText(String(r.result)); };
+    r.onerror = function(){ toast("粗纲文件读取失败", true); };
+    r.readAsText(f, "utf-8");
+    outlineInput.value = "";
+  });
+  chkBeats.addEventListener("change", function(){ renderDetail(); });
+
+  document.getElementById("btnPaste").addEventListener("click", function(){
+    pasteModal.classList.add("show");
+    pasteArea.focus();
+  });
+  document.getElementById("btnPasteCancel").addEventListener("click", function(){ pasteModal.classList.remove("show"); });
+  document.getElementById("btnPasteLoad").addEventListener("click", function(){
+    var text = pasteArea.value.trim();
+    if (!text) { toast("粘贴内容为空", true); return; }
+    var parts = text.split(/^\s*={3,}\s*$/m).map(function(s){ return s.trim(); }).filter(Boolean);
+    var list = parts.map(function(p, i){
+      return parseChapter("粘贴片段" + (i + 1) + ".md", p);
+    });
+    mergeChapters(list);
+    pasteModal.classList.remove("show");
+    toast("已载入 " + list.length + " 章（粘贴）");
+  });
+  pasteModal.addEventListener("click", function(e){ if (e.target === pasteModal) pasteModal.classList.remove("show"); });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") pasteModal.classList.remove("show"); });
+
+  document.addEventListener("dragover", function(e){ e.preventDefault(); document.body.classList.add("dragging"); });
+  document.addEventListener("dragleave", function(e){ if (e.relatedTarget === null) document.body.classList.remove("dragging"); });
+  document.addEventListener("drop", function(e){
+    e.preventDefault();
+    document.body.classList.remove("dragging");
+    if (!e.dataTransfer) return;
+    collectDropped(e.dataTransfer).then(function(files){
+      if (!files || !files.length) { toast("没有识别到文件", true); return; }
+      readFiles(files);
+    });
+  });
+
+  document.getElementById("btnExport").addEventListener("click", function(){
+    var svg = host.querySelector("svg");
+    if (!svg) { toast("暂无可导出的图形", true); return; }
+    var clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns", NS);
+    var style = document.createElementNS(NS, "style");
+    style.textContent = "text{font-family:" + FONT + "}";
+    clone.insertBefore(style, clone.firstChild);
+    var source = new XMLSerializer().serializeToString(clone);
+    var blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + source], { type: "image/svg+xml;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "写作实况曲线.svg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    toast("已导出 SVG");
+  });
+
+  /* ---------------- boot ---------------- */
+  renderLegend();
+  renderEmpty();
+})();
+</script>
+</body>
+</html>
